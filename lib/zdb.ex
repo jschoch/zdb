@@ -38,6 +38,18 @@ defmodule Zdb do
     name = "#{Mix.env}_#{name}"
     :erlcloud_ddb2.create_table(name,attrDefs,keySchema,read_units,write_units,opts,config())
   end
+  @doc ~S"""
+
+  describes a ddb table using env prefixed table name
+
+  ## Example
+    Zdb.describe("test_table")
+    {:ddb2_table_description, [{"hk", :s}, {"rk", :s}], 1420207158.875, 1,
+    {"hk", "rk"}, :undefined, :undefined,
+    {:ddb2_provisioned_throughput_description, :undefined, :undefined, 0, 1, 1},
+    "dev_test_table", 36, :active}
+
+  """
   def describe(table) do
     table = "#{Mix.env}_#{table}"
      case :erlcloud_ddb2.describe_table(table,[],config()) do
@@ -45,11 +57,33 @@ defmodule Zdb do
         {:error,e} -> IO.puts "describe error #{inspect e}"
       end
   end
+  @doc ~S"""
+  deletes the table by name, optional value to not raise on failure
+
+  ## Example: 
+
+    Zdb.delete_table("test_table")
+    :ok
+
+
+    # run 2nd time 
+    Zdb.delete_table("test_table")
+    ** (RuntimeError) Delete table: test_table failed: {"ResourceNotFoundException", ""}.
+        Tables available {:ok, ["Thread", "dev_play_table", "test_table"]}
+    (zdb) lib/zdb.ex:29: Zdb.delete_table/2
+
+    # run with :no_raise
+    iex(66)> Zdb.delete_table("test_table",:no_raise)
+    WARNING: Delete table: test_table failed: :no_raise flag used
+    :error
+
+  """
   def delete_table(name,r \\:ok) do
     table = "#{Mix.env}_#{name}"
     case :erlcloud_ddb2.delete_table(table,[],config()) do
       {:ok,description} -> :ok #IO.puts "Table #{name} deleted\n\tDetails: #{inspect description}"
       {:error,e} when r == :no_raise -> IO.puts "WARNING: Delete table: #{name} failed: :no_raise flag used"
+        :error
       {:error,e} -> raise "Delete table: #{name} failed: #{inspect e}. \n\tTables available #{inspect Zdb.list}"
     end 
   end
