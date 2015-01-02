@@ -3,6 +3,7 @@ Zdb
 
 ** Elixir access for dynamodb **
 
+[docs](http://stink.net/zdb)
 
 # Usage
 
