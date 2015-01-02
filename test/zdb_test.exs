@@ -34,6 +34,13 @@ defmodule ZdbTest do
     key = res.key
     assert key ==  {"bar","foo"}
   end
+  test "simple get works" do
+    item = %Zitem{key: {:bar,:foo},table: "test_table"}
+    Zdb.put(item)
+    zr = Zdb.get(item)
+    [i] = zr.items
+    assert i.key == {"bar","foo"}
+  end
   test "put and get map works" do
     item = %Zitem{key: {:bar,:foo},table: "test_table",map: %{key: "value"}}
     Zdb.put(item)

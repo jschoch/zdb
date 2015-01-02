@@ -21,7 +21,6 @@ defmodule Zdb do
 
   """
   def create(name) do
-    name = "#{Mix.env}_#{name}"
     create(name,1,1)
   end
   @doc ~S"""
@@ -43,11 +42,12 @@ defmodule Zdb do
   describes a ddb table using env prefixed table name
 
   ## Example
-    Zdb.describe("test_table")
-    {:ddb2_table_description, [{"hk", :s}, {"rk", :s}], 1420207158.875, 1,
-    {"hk", "rk"}, :undefined, :undefined,
-    {:ddb2_provisioned_throughput_description, :undefined, :undefined, 0, 1, 1},
-    "dev_test_table", 36, :active}
+        Zdb.describe("test_table")
+
+        {:ddb2_table_description, [{"hk", :s}, {"rk", :s}], 1420207158.875, 1,
+        {"hk", "rk"}, :undefined, :undefined,
+        {:ddb2_provisioned_throughput_description, :undefined, :undefined, 0, 1, 1},
+        "dev_test_table", 36, :active}
 
   """
   def describe(table) do
@@ -62,20 +62,24 @@ defmodule Zdb do
 
   ## Example: 
 
-    Zdb.delete_table("test_table")
-    :ok
+        Zdb.delete_table("test_table")
+        :ok
 
 
-    # run 2nd time 
-    Zdb.delete_table("test_table")
-    ** (RuntimeError) Delete table: test_table failed: {"ResourceNotFoundException", ""}.
+  ### run 2nd time 
+
+      Zdb.delete_table("test_table")
+
+        ** (RuntimeError) Delete table: test_table failed: {"ResourceNotFoundException", ""}.
         Tables available {:ok, ["Thread", "dev_play_table", "test_table"]}
-    (zdb) lib/zdb.ex:29: Zdb.delete_table/2
+        (zdb) lib/zdb.ex:29: Zdb.delete_table/2
 
-    # run with :no_raise
-    iex(66)> Zdb.delete_table("test_table",:no_raise)
-    WARNING: Delete table: test_table failed: :no_raise flag used
-    :error
+  ### run with :no_raise
+
+      iex(66)> Zdb.delete_table("test_table",:no_raise)
+
+        WARNING: Delete table: test_table failed: :no_raise flag used
+        :error
 
   """
   def delete_table(name,r \\:ok) do
@@ -87,6 +91,10 @@ defmodule Zdb do
       {:error,e} -> raise "Delete table: #{name} failed: #{inspect e}. \n\tTables available #{inspect Zdb.list}"
     end 
   end
+  @doc ~S"""
+  prints your default_config()
+
+  """
   def print_config() do
     env = Application.get_all_env(:zdb) |> Enum.into(%{})
     c = [ddb_host: env.ddb_host,
@@ -96,18 +104,37 @@ defmodule Zdb do
       secret_access_key: env.ddb_skey]
     Enum.into(c,%{})
   end
+  @doc ~S"""
+  grabs the current config based on your Mix.env
+  """
   def config() do
     env = Application.get_all_env(:zdb) |> Enum.into(%{})
     Zc.aws_config(ddb_host: env.ddb_host,ddb_port: env.ddb_port,ddb_scheme: env.ddb_scheme,access_key_id: env.ddb_key,secret_access_key: env.ddb_skey)
   end
+  @doc ~S"""
+  lists available tables based on your Mix.env
+  """
   def list() do
     :erlcloud_ddb2.list_tables([],config())
     
   end
+  @doc ~S"""
+  TODO: not sure I need this
+  """
   def t(table_name) do
     %Zdb{table: table_name}
   end
-
+  @doc ~S"""
+  get_item
+  ## Example: 
+      iex(1)> item = %Zitem{key: {:bar,:foo},table: "test_table"}
+      %Zitem{attributes: [], data: "{}", key: {:bar, :foo}, map: %{},
+      opts: [attributes_to_get: []], table: "test_table"}
+  
+      iex(9)> Zdb.get("test_table","bar","foo")
+        %Zr{items: [%Zitem{attributes: %{}, data: "{}", key: {"bar", "foo"}, map: %{},
+        opts: [attributes_to_get: []], table: "test_table"}]}
+  """
   def get(table,hash_key,range_key) when is_binary(hash_key)  do
     key = [
             {"hk",hash_key},
@@ -115,17 +142,29 @@ defmodule Zdb do
           ]
     _get(table,key)
   end
-  def get(%Zdb{} = z,%Key{} = key) do
-    k = Map.from_struct(key)
-          |> Map.to_list
-          |> Enum.map(fn({k,v}) -> {Atom.to_string(k),v} end) 
-    _get(z.table,k)
-  end
+  #def get(%Zdb{} = z,%Key{} = key) do
+    #k = Map.from_struct(key)
+          #|> Map.to_list
+          ##|> Enum.map(fn({k,v}) -> {Atom.to_string(k),v} end) 
+    #_get(z.table,k)
+  #end
+  @doc ~S"""
+  get_item
+  ## Example:
+      iex(1)> item = %Zitem{key: {:bar,:foo},table: "test_table"}
+      %Zitem{attributes: [], data: "{}", key: {:bar, :foo}, map: %{},
+      opts: [attributes_to_get: []], table: "test_table"}
+
+      iex(6)> Zdb.get(item)
+    %Zr{items: [%Zitem{attributes: %{}, data: "{}", key: {"bar", "foo"}, map: %{},
+       opts: [attributes_to_get: []], table: "test_table"}]}
+
+  """
   def get(%Zitem{} = item) do
     key = parse_key(item)
     _get(item.table,key)
   end
-  def _get(table_name,key,opts \\[]) do
+  defp _get(table_name,key,opts \\[]) do
     table = "#{Mix.env}_#{table_name}"
     case :erlcloud_ddb2.get_item(table,key,opts,config()) do
       {:ok, ddb} ->
@@ -136,7 +175,7 @@ defmodule Zdb do
       {:error,e} -> raise "Zdb.get error: #{inspect e}\n\ttable: #{inspect table}\n\tkey: #{inspect key}\n\topts: #{inspect opts}\n\tconfig: #{inspect config()}"
     end
   end
-  def item_key_to_strings({k,v}) when is_atom(k) and is_atom(v) do
+  defp item_key_to_strings({k,v}) when is_atom(k) and is_atom(v) do
     {Atom.to_string(k),Atom.to_string(v)}
   end
   @decap_reg ~r/^(?<s>[A-Z])/
@@ -151,6 +190,17 @@ defmodule Zdb do
     #end
   #end
   def decap(""), do: ""
+  
+  @doc ~S"""
+    decapitalizes first letter of a string
+    
+      ## Example:
+
+    iex(10)> Zdb.decap("Foo")
+    WARNING: please don't use caps in key names!!! "Foo"
+    "foo"
+  """
+
   def decap(s) do
     case String.match?(s,@decap_reg) do
       true -> IO.puts "WARNING: please don't use caps in key names!!! #{inspect s}"
@@ -175,6 +225,22 @@ defmodule Zdb do
       _ -> {k,v}
     end
   end
+  @doc ~S"""
+  dynamo put_item, requires `Zitem`
+
+  ## Example: 
+
+        iex(11)> item = %Zitem{key: {:bar,:foo},table: "test_table"}
+
+        %Zitem{attributes: [], data: "{}", key: {:bar, :foo}, map: %{},
+         opts: [attributes_to_get: []], table: "test_table"}
+
+
+        iex(12)>     Zdb.put(item)
+
+        {:ok, []}
+
+  """
   def put(%Zitem{} = item) do
     {hk,rk} = item.key
     #TODO: encode item.data here, not in call
@@ -185,10 +251,8 @@ defmodule Zdb do
     opts = Enum.filter(item.opts,fn({k,v}) -> k != :attributes_to_get end)
     _put(item.table,i,opts) 
   end
-  #def put(%Zdb{} = z,%Zitem{} = item) do
-  #  _put(z.table,item,item.opts)
-  #end
-  def _put(table_name,item,opts \\[return_values: :all_new]) do
+
+  defp _put(table_name,item,opts \\[return_values: :all_new]) do
     table = "#{Mix.env}_#{table_name}"
     case :erlcloud_ddb2.put_item(table,item,opts,config()) do
       {:ok, ret} ->
