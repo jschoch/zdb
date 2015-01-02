@@ -1,0 +1,6 @@
+consider s_get that only returns a bare item and not a Zr
+
+start adding docs
+
+consider not interfacing with erlcloud at all other than to call 
+  erlcloud_ddb_impl:request
