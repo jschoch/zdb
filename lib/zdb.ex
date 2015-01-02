@@ -1,13 +1,37 @@
 defmodule Zc do
+  @moduledoc """
+  record for erlcloud aws_config()
+  
+  ## Example
+
+  aws_config(ddb_port: 9001)
+  """
   require Record
   Record.defrecord :aws_config, Record.extract(:aws_config,from_lib: "erlcloud/include/erlcloud_aws.hrl")
 end
 defmodule Zdb do
   defstruct table: "test_table"
   require Zc
+  @doc ~S"""
+  creates a table.  interpolates mix env for you: 
+  table_name = #{Mix.env}_#{table_name}
+  
+  ## Example
+    Zdb.create(table_name)
+
+  """
   def create(name) do
+    name = "#{Mix.env}_#{name}"
     create(name,1,1)
   end
+  @doc ~S"""
+  creates a table.  interpolates mix env: table_name = "#{Mix.env}_#{table_name}"
+  currently forces hash key and range key values for use with `Zitem`
+  ## Example:
+    Zdb.create(table_name,read_units,write_units)
+
+
+  """
   def create(name,read_units,write_units,opts \\[]) do
     attrDefs = [{"hk",:s},{"rk",:s}]
     keySchema = {"hk","rk"}

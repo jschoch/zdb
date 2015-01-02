@@ -1,16 +1,17 @@
 defmodule Zdb.Mixfile do
   use Mix.Project
-
+  @version "0.0.1"
   def project do
     [app: :zdb,
-     version: "0.0.1",
+     version: @version,
      elixir: "~> 1.0",
      name: "Zdb",
      description: " elixir library for dynamodb ",
      package: package,
      source_url: "https://github.com/jschoch/zdb",
      homepage_url: "http://stink.net/zdb",
-     docs: &docs/0,
+     docs: [source_ref: "v#{@version}",
+            source_url: "https://github.com/jschoch/zdb"] ,
      deps: deps]
   end
 
@@ -32,7 +33,8 @@ defmodule Zdb.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [{:erlcloud, github: "gleber/erlcloud"},
-     {:ex_doc, "~> 0.6.2", only: docs},
+     {:ex_doc, "~> 0.6.2", only: :dev},
+     {:earmark, ">= 0.0.0",only: :dev},
      {:poison, "~> 1.3"}
     ]
   end
@@ -41,11 +43,11 @@ defmodule Zdb.Mixfile do
      licenses: ["MIT"],
      links: %{github: "https://github.com/jschoch/zdb"}]
   end
-  defp docs do
-    {ref, 0} = System.cmd("git", ["rev-parse", "--verify", "--quiet", "HEAD"])
-    IO.puts "ref: #{inspect ref}"
-    [source_ref: ref,
-     #main: "overview",
-     readme: true]
-  end
+  #defp docs do
+    #{ref, 0} = System.cmd("git", ["rev-parse", "--verify", "--quiet", "HEAD"])
+    #IO.puts "ref: #{inspect ref}"
+    #[source_ref: ref,
+     ##main: "overview",
+     #readme: true]
+  #end
 end
