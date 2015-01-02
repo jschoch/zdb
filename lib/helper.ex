@@ -1,4 +1,8 @@
 defmodule Zdb.TH do
+  @moduledoc ~S"""
+  samples from the erlcloud test suite working in elixir for reference
+
+  """
   def keys_to_strings(list) do
     Enum.map(list,fn({k,v})-> {Atom.to_string(k),v} end)
   end

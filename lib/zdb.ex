@@ -125,15 +125,16 @@ defmodule Zdb do
     %Zdb{table: table_name}
   end
   @doc ~S"""
-  get_item
+  get_item returns: `Zr`
+
   ## Example: 
       iex(1)> item = %Zitem{key: {:bar,:foo},table: "test_table"}
       %Zitem{attributes: [], data: "{}", key: {:bar, :foo}, map: %{},
       opts: [attributes_to_get: []], table: "test_table"}
   
       iex(9)> Zdb.get("test_table","bar","foo")
-        %Zr{items: [%Zitem{attributes: %{}, data: "{}", key: {"bar", "foo"}, map: %{},
-        opts: [attributes_to_get: []], table: "test_table"}]}
+      %Zr{items: [%Zitem{attributes: %{}, data: "{}", key: {"bar", "foo"}, map: %{},
+      opts: [attributes_to_get: []], table: "test_table"}]}
   """
   def get(table,hash_key,range_key) when is_binary(hash_key)  do
     key = [
@@ -149,7 +150,7 @@ defmodule Zdb do
     #_get(z.table,k)
   #end
   @doc ~S"""
-  get_item
+  get_item returns: `Zr`
   ## Example:
       iex(1)> item = %Zitem{key: {:bar,:foo},table: "test_table"}
       %Zitem{attributes: [], data: "{}", key: {:bar, :foo}, map: %{},
