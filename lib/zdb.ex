@@ -176,10 +176,12 @@ defmodule Zdb do
       {:error,e} -> raise "Zdb.get error: #{inspect e}\n\ttable: #{inspect table}\n\tkey: #{inspect key}\n\topts: #{inspect opts}\n\tconfig: #{inspect config()}"
     end
   end
-  defp item_key_to_strings({k,v}) when is_binary(k) do
+  @doc false
+  def item_key_to_strings({k,v}) when is_binary(k) do
     {k,v}
   end
-  defp item_key_to_strings({k,v}) when is_atom(k) and is_atom(v) do
+  @doc false
+  def item_key_to_strings({k,v}) when is_atom(k) and is_atom(v) do
     {Atom.to_string(k),Atom.to_string(v)}
   end
   @decap_reg ~r/^(?<s>[A-Z])/

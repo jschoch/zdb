@@ -176,4 +176,8 @@ defmodule ZdbTest do
   test "streams work" do
     assert false, "not done yet, get those streams going"
   end
+  test "string key works" do
+    res = Zdb.item_key_to_strings({"account.AEH", "abcdefg"})
+    assert res == {"account.AEH", "abcdefg"}
+  end
 end
