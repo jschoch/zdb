@@ -7,6 +7,20 @@ Zdb
 
 # Usage
 
+
+## If you want to use Dynamodb local for dev
+
+Add the following to your <project dir>/config/#{Mix.enf}.exs
+
+in this case :dev
+
+    config :zdb,
+      ddb_port: 8000,
+      ddb_host: 'localhost',
+      ddb_scheme: 'http://',
+      ddb_key: 'ddb_local_' ++ (Mix.env|>Atom.to_string|> String.to_char_list),
+      ddb_skey: 'ddb_local_' ++ (Mix.env|>Atom.to_string|> String.to_char_list)
+
 ```elixir
 ## create table
 Zdb.create("test_table")
