@@ -21,6 +21,8 @@ in this case :dev
       ddb_key: 'ddb_local_' ++ (Mix.env|>Atom.to_string|> String.to_char_list),
       ddb_skey: 'ddb_local_' ++ (Mix.env|>Atom.to_string|> String.to_char_list)
 
+then install dynamodb and fire it up....
+
 ```elixir
 ## create table
 Zdb.create("test_table")
