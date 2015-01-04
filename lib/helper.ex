@@ -37,6 +37,21 @@ defmodule Zdb.TH do
     config = Zdb.config
     {res,data} = :erlcloud_ddb2.put_item(table_name,attributes,opts,config)
   end
+  def e_put2 do
+    table_name = "Thread"
+    attributes = [LastPostedBy: "bob@example.com",
+                  ForumName: "Amazon DynamoDB",
+                  LastPostDateTime: "201503201023",
+                  Tags: ["UNF","HelpMe"],
+                  Subject: "foo",
+                  Foo: "Bar",
+                  Message: "I want to update multiple items in a single API call. What's the best way to do that?"
+                 ]
+    attributes = Zdb.TH.keys_to_strings(attributes)
+    opts = [{:expected,[{"ForumName",:null},{"Subject",:null}]}]
+    config = Zdb.config
+    {res,data} = :erlcloud_ddb2.put_item(table_name,attributes,opts,config)
+  end
   def e_delete do
     table_name = "Thread"
     key = [
@@ -59,6 +74,61 @@ defmodule Zdb.TH do
             consistent_read: :true]
     config = Zdb.config
     {res,data} = :erlcloud_ddb2.q(table_name,key_conditions,opts,config)
+  end
+  @doc ~s"""
+ query with filter expressions
+
+  """
+  def e_q_fe do
+    table_name = "Thread"
+    key_conditions = [
+                      {"LastPostDateTime",{{:s, "20130101"},{:s, "20130115"}},:between},
+                      {"ForumName",{:s,"Amazon DynamoDB"}}
+                    ]
+    opts = [index_name: "LastPostIndex",
+            select: :all_attributes,
+            limit: 3,
+            filter_expression: ["thing eq :t"],
+            #expression_attribute_value: [{":t",{:n, 2}}],
+            #expression_attribute_value: [t: 2], 
+            expression_attribute_value: 2,
+            consistent_read: :true]
+    config = Zdb.config
+    {res,data} = :erlcloud_ddb2.q(table_name,key_conditions,opts,config)
+  end
+  def e_qf do
+    table_name = "Thread"
+    key_conditions = [
+                      {"ForumName",{:s,"Amazon DynamoDB"}}
+                    ]
+    opts = [index_name: "LastPostIndex",
+            select: :all_attributes,
+            limit: 3,
+            query_filter: {"Subject",:not_null},
+            consistent_read: :true]
+    config = Zdb.config
+    IO.puts "subject is :not_null"
+    IO.inspect :erlcloud_ddb2.q(table_name,key_conditions,opts,config)
+    opts = [index_name: "LastPostIndex",
+            select: :all_attributes,
+            limit: 3,
+            query_filter: [{"Subject","foo",:eq}],
+            consistent_read: :true]
+    config = Zdb.config
+    IO.puts "subject = 'foo'"
+    IO.inspect :erlcloud_ddb2.q(table_name,key_conditions,opts,config)
+
+  end
+  @doc """
+
+  raw scanning via ddb_impl
+
+  :erlcloud_ddb_impl.request(config, operation, to_be_encoded_to_json)
+  """
+  
+  def e_raw_scan do
+    
+    :erlcloud_ddb_impl.request(Zdb.config,"DynamoDB_20120810.Scan",[{"TableName","Thread"}]) 
   end
   def e_get do
     table_name = "Thread"

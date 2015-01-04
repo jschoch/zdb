@@ -338,18 +338,56 @@ defmodule Zdb do
     b = infer_value({k,b})
     {k,{a,b},o}
   end
+  @doc ~S"""
+  q(`Zr`)
+
+  # TODO: sane API needs lots  of work, looking for comments
+  ## Example
+  
+      Access all hash keys equal to "bob" and range keys that begin with "e".  First you must create a query filter, then you can match :eq | :ne | :le | :lt | :ge | :gt | :not_null | :null | :contains | :not_contains | :begins_with | :in | :between
+
+      qf = {"thing",1,:gt}
+      q = %Zq{table: "test_table",kc: [{"hk",:eq,:bob}],qf: qf}
+      res = Zdb.q(q)
+
+
+      qf = {"other_thing","foo",:eq}
+      q = %Zq{table: "test_table",kc: [{"hk",:eq,:bob}],qf: qf}
+      res = Zdb.q(q)
+
+  """
   def q(%Zq{} = zq) do
     e_kc = parse_kc(zq.kc)
-    opts = []
+    case zq.qf != [] do
+      true ->
+        opts = parse_query_options(zq)
+      false -> 
+        IO.puts "warning no query filter #{inspect zq}"
+    end
     _q(zq.table,e_kc,opts)
   end
   def _q(table,e_kc,opts) do
-     table = "#{Mix.env}_#{table}"
+    table = "#{Mix.env}_#{table}"
+    IO.puts ":erlcloud_ddb2.q(#{inspect table},#{inspect e_kc},#{inspect opts},Zdb.config)"
     case :erlcloud_ddb2.q(table,e_kc,opts,config()) do
       {:ok, r} when is_list(r) -> %Zr{items: list_to_zitems(r,table)}
       {:ok, r} -> raise "why is r not a list!!! #{inspect r}"
       {:error, e} -> raise "query error #{inspect e}\n\tkc = #{inspect e_kc}\n\ttable = #{inspect table}\n\topts = #{inspect opts}"
     end
+  end
+  def parse_query_options(zq) do
+    opts = []
+    case Map.has_key?(zq,:qf) do
+      true -> opts = opts ++ [query_filter: zq.qf]
+      false -> nil
+    end
+    #case Map.has_key?(zq,:fe) do
+      #true -> 
+        #opts = opts ++ [{:filter_expression, zq.fe} ]
+        #opts = opts ++ [{:expression_attribute_values,zq.eav}]
+      #false -> nil
+    #end
+    opts
   end
   def scan(name) when is_binary(name) do
     table = "#{Mix.env}_#{name}"

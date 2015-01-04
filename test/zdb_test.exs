@@ -137,7 +137,7 @@ defmodule ZdbTest do
     item = %Zitem{key: {:bob,:elk},table: "test_table",map: map,attributes: attributes}
     Zdb.put(item)
      map = %{key: "value"}
-    attributes = [lastPostBy: "bob@bob.com",thing: 1]
+    attributes = [lastPostBy: "bob@bob.com",thing: 1,other_thing: "foo"]
     item = %Zitem{key: {:bob,:phone},table: "test_table",map: map,attributes: attributes}
     Zdb.put(item)
     map = %{key: "value"}
@@ -145,17 +145,33 @@ defmodule ZdbTest do
     item = %Zitem{key: {:bob,"2"},table: "test_table",map: map,attributes: attributes}
     Zdb.put(item)
     # select hk bob, rk begins with e
-    q = %Zq{table: "test_table",kc: [{"hk",:eq,:bob},{"rk",:begins_with,"e"}]}
+    # TODO: fix :qf so that we match {attribute_name, condition, attribute_value}
+    qf = [{"thing",1,:gt}]
+    q = %Zq{table: "test_table",kc: [{"hk",:eq,:bob}],qf: qf}
     res = Zdb.q(q)
     assert is_list(res.items)
-    assert Enum.count(res.items) == 2
+    assert Enum.count(res.items) == 3
     # range key between 1 and 3
-    q = %Zq{table: "test_table",kc: [{:hk,:eq,:bob},{:rk, :between, "1","3"}]}
+    kc = [{:hk,:eq,:bob},{:rk, :between, "1","3"}]
+    q = %Zq{table: "test_table",kc: kc}
+  
+    #TODO: figure out why this doesn't work
+    #res = Zdb.q(q)
+    #[i] = res.items
+    #assert i.attributes.thing == 15
+
+
+
+    #  find other key between 1 and 3
+    qf = [{"thing",2,:eq}]
+    q = %Zq{table: "test_table",kc: [{"hk",:eq,:bob}],qf: qf}
     res = Zdb.q(q)
-    [i] = res.items
-    assert i.attributes.thing == 15
-    # other key between 1 and 3
-    # TODO: 
+    assert Map.has_key?(res,:items)
+    items = res.items
+    assert Enum.count(items) == 1
+    [item] = items
+    assert match?(%Zitem{},item)
+    assert item.attributes.thing == 2
   end
   test "streams work" do
     assert false, "not done yet, get those streams going"

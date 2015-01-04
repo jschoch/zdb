@@ -19,6 +19,10 @@ defmodule Zq do
     :consistent_read default :true
 
     :select default all_attributes `http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Query.html#DDB-Query-request-Select`
+  
+    :fe a filter expression [docs](http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Expressions.SpecifyingConditions.html)
+    
+    :eav expression attribute values
 
   """
   defstruct table: "", 
@@ -26,6 +30,8 @@ defmodule Zq do
     select: :all_attributes, 
     kc: [],
     qf: [], 
+    fe: "",
+    eav: [],
     operator: :and, 
     esk: [], 
     rcc: :none, 
