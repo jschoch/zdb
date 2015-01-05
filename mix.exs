@@ -35,6 +35,7 @@ defmodule Zdb.Mixfile do
     [{:erlcloud, github: "gleber/erlcloud"},
      {:ex_doc, "~> 0.6.2", only: :dev},
      {:earmark, ">= 0.0.0",only: :dev},
+     {:timex, "~> 0.13.2"},
      {:poison, "~> 1.3"}
     ]
   end

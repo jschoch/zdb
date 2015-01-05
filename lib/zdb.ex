@@ -20,6 +20,7 @@ defmodule Zdb do
     Zdb.create(table_name)
 
   """
+  use Timex
   def create(name) do
     create(name,1,1)
   end
@@ -462,6 +463,18 @@ defmodule Zdb do
       {String.to_atom(k),v}
     end)
     Enum.into(list,%{})
+  end
+  @doc ~S"""
+  gets a time stamp from timex, format ISO in UTC
+  ## Example
+
+      iex(1)> Zdb.gts
+      "2015-01-05T13:04:45+0000"
+  """
+  def gts do
+    date = Date.local
+    date = Date.universal(date)
+    DateFormat.format!(date,"{ISO}")
   end
 end
 
