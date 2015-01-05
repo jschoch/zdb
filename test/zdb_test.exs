@@ -156,9 +156,9 @@ defmodule ZdbTest do
     q = %Zq{table: "test_table",kc: kc}
   
     #TODO: figure out why this doesn't work
-    #res = Zdb.q(q)
-    #[i] = res.items
-    #assert i.attributes.thing == 15
+    res = Zdb.q(q)
+    [i] = res.items
+    assert i.attributes.thing == 15
 
 
 

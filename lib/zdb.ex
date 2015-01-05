@@ -364,6 +364,7 @@ defmodule Zdb do
   """
   def q(%Zq{} = zq) do
     e_kc = parse_kc(zq.kc)
+    opts = []
     case zq.qf != [] do
       true ->
         opts = parse_query_options(zq)
