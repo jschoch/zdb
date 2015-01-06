@@ -1,4 +1,5 @@
 defmodule ZdbTest do
+  defstruct foo: ""
   use ExUnit.Case
   setup do
     IO.puts "SETUP start"
@@ -40,6 +41,13 @@ defmodule ZdbTest do
     zr = Zdb.get(item)
     [i] = zr.items
     assert i.key == {"bar","foo"}
+  end
+  test "put struct map works" do
+    item = %Zitem{key: {:bar,:foo},table: "test_table",map: %ZdbTest{foo: "foo"}}
+    res = Zdb.put(item)
+    [i] = Zdb.get(item).items
+    assert res != nil
+    assert i.map == %{foo: "foo"}
   end
   test "put and get map works" do
     item = %Zitem{key: {:bar,:foo},table: "test_table",map: %{key: "value"}}
@@ -98,6 +106,9 @@ defmodule ZdbTest do
     res = Zdb.update(item,updates) 
     [new_item] = Zdb.get(item).items
     assert new_item.map == %{foo: "bar"}
+  end
+  test "update streamlines ZU with key so we don't need %Zitem" do
+    assert false,"need to update ZU with key so we can just pass it to update(%Zu{})"
   end
   test "update item with conditional works" do
     map = %{key: "value"}

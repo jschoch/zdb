@@ -1,3 +1,9 @@
+refactor delete to be able to take key: {hk,rk}
+refactor update and %Zu to take a key arg
+refactor get to take key arg
+look for other places where we just need a  key for %Zitem
+do we need to raise on a "ResourceNotFoundException", probly not
+
 consider s_get that only returns a bare item and not a Zr
 
 start adding docs
