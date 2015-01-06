@@ -78,11 +78,11 @@ defmodule ZdbTest do
     assert res == {"lastPostBy", {:s, "fred@example.com"}}
   end
   test "infer_keys(list) works" do
-    ui = [lastPostBy: "fred@example.com"]
+    ui = [lastPostBy: "fred@example.com",map: %{foo: "foo"}]
     opts = [:attributes_to_get,["foo","bar"]]
     updates = %Zu{attributes: ui, opts: opts}
     keys = Zdb.infer_keys(updates.attributes)
-    assert keys == [{"lastPostBy", {:s, "fred@example.com"}}]
+    assert keys == [{"lastPostBy", {:s, "fred@example.com"}},{"map",{:s,"{\"foo\":\"foo\"}"}}]
   end
   test "update item works" do
     item = %Zitem{key: {:bar,:foo},table: "test_table",map: %{foo: :foo}}
@@ -94,6 +94,10 @@ defmodule ZdbTest do
     [new_item] = Zdb.get(item).items
     assert new_item.table == "test_table", "table was no good item: #{inspect new_item}"
     assert new_item.map == %{foo: "foo"}
+    updates = %Zu{attributes: [map: %{foo: "bar"}],action: :put}
+    res = Zdb.update(item,updates) 
+    [new_item] = Zdb.get(item).items
+    assert new_item.map == %{foo: "bar"}
   end
   test "update item with conditional works" do
     map = %{key: "value"}

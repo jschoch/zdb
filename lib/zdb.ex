@@ -311,6 +311,7 @@ defmodule Zdb do
       v when is_binary(v) -> {:s,v}
       v when is_number(v) -> {:n,v}
       v when is_list(v) -> {:l,v}
+      v when is_map(v) -> {:s,Poison.encode!(v)}
       v when is_boolean(v) -> {:bool,v}
       finish -> "infer_value: unknown type for key: #{inspect k} value: #{inspect v}"
     end
