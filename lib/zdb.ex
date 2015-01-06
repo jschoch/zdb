@@ -282,7 +282,7 @@ defmodule Zdb do
     IO.puts "in_updates: #{inspect in_updates}"
     opts = parse_update_opts(updates.opts)
     case :erlcloud_ddb2.update_item(table,key,in_updates,opts,config()) do
-      {:ok,ret} -> ret
+      {:ok,ret} -> ddb_to_zitem(ret,table_name)
       {:error,e} -> raise "Zdb.get error: #{inspect e}\n\tconverted_updates= #{inspect in_updates}\n\ttable= #{inspect table}\n\tin_updates= #{inspect in_updates}\n\tkey= #{inspect key}\n\topts= #{inspect opts}\n\tconfig= #{inspect config()}"
     end
   end

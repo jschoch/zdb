@@ -38,5 +38,5 @@ defmodule Zu do
       []
 
   """
-  defstruct attributes: [],opts: [],action: :put
+  defstruct attributes: [],opts: [return_values: :all_new],action: :put
 end
