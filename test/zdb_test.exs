@@ -61,7 +61,8 @@ defmodule ZdbTest do
   test "delete works" do
     item = %Zitem{key: {:bar,:foo},table: "test_table",map: %{key: "value"}}
     Zdb.put(item)
-    res = Zdb.delete(item)
+    {c,res} = Zdb.delete(item)
+    assert c == :ok
     assert res == []
   end
   test "ddb_to_zitem works properly" do
@@ -110,6 +111,18 @@ defmodule ZdbTest do
   test "update streamlines ZU with key so we don't need %Zitem" do
     assert false,"need to update ZU with key so we can just pass it to update(%Zu{})"
   end
+  test "update non existant item fails correctly" do
+    map = %{key: "value"}
+    attributes = [lastPostBy: "bob@bob.com"]
+    item = %Zitem{key: {:bob,:email},table: "test_table",map: map,attributes: attributes}
+ 
+    updates = %Zu{attributes: [lastPostBy: "bob@bobo.com"],action: :put,
+                  opts: [expected: [lastPostBy: "bob@bob.com"],
+                    return_values: :all_new ]
+              }
+    res = Zdb.update(item,updates)
+    IO.puts "res: #{inspect res}"
+  end
   test "update item with conditional works" do
     map = %{key: "value"}
     attributes = [lastPostBy: "bob@bob.com"]
@@ -119,15 +132,25 @@ defmodule ZdbTest do
                   opts: [expected: [lastPostBy: "bob@bob.com"],
                     return_values: :all_new ]
               } 
-    res = Zdb.update(item,updates)
-    assert res == [{"map", "{\"key\":\"value\"}"}, {"data", "{}"}, {"hk", "bob"},
-            {"table", "test_table"}, {"lastPostBy", "bob@bobo.com"},
-            {"rk", "email"}]
+    updated_item = Zdb.update(item,updates)
+    assert match?(%Zitem{},updated_item)
+    assert updated_item.attributes != [], "nothing updated res was #{inspect updated_item}"
+    assert updated_item.attributes.lastPostBy == "bob@bobo.com"
     updates = %Zu{attributes: [
-                    lastPostBy: "bob@bobo.com",
-                    data: Poison.encode!(%{foo: "foo"})],
-                  opts: [expected: [lastPostBy: "bob@bobo.com"]]}
-    res = Zdb.update(item,updates)
+                    lastPostBy: "bob@foo.com",
+                    #data: Poison.encode!(%{foo: "foo"})],
+                    map: %{foo: "foo"}],action: :put,
+                  opts: [expected: [lastPostBy: "bob@bobo.com"],return_values: :all_new]}
+    res = Zdb.update(updated_item,updates)
+    assert match?(%Zitem{},res)
+    assert res.attributes.lastPostBy == "bob@foo.com"
+    updates = %Zu{attributes: [
+                    lastPostBy: "this should not work"
+                  ],
+                  action: :put,
+                  opts: [expected: [lastPostBy: "does not exist"],return_values: :all_new]}
+    bad_res = Zdb.update(updated_item,updates)
+    assert bad_res == :condition_check_failed, "bad update result did not match #{inspect bad_res}"
   end
   test "put and get struct works" do
     assert false, "get/put struct TODO"

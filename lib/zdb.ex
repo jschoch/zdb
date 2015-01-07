@@ -283,6 +283,9 @@ defmodule Zdb do
     opts = parse_update_opts(updates.opts)
     case :erlcloud_ddb2.update_item(table,key,in_updates,opts,config()) do
       {:ok,ret} -> ddb_to_zitem(ret,table_name)
+      {:error,{"ConditionalCheckFailedException", ""}} -> 
+        IO.puts "WARNING Zdb.update conditional check failed for key: #{inspect key}"
+        :condition_check_failed
       {:error,e} -> raise "Zdb.get error: #{inspect e}\n\tconverted_updates= #{inspect in_updates}\n\ttable= #{inspect table}\n\tin_updates= #{inspect in_updates}\n\tkey= #{inspect key}\n\topts= #{inspect opts}\n\tconfig= #{inspect config()}"
     end
   end
@@ -414,10 +417,14 @@ defmodule Zdb do
     case :erlcloud_ddb2.delete_item(table,key,opts,config()) do
       {:ok, match} -> 
         IO.puts "delete_item result for item: #{inspect item}\n\t#{inspect match}"
-        match
+        {:ok,match}
       {:error, {"ResourceNotFoundException", "Requested resource not found"}} ->
-        IO.puts "Could not delete, item not found.  item.key #{inspect item.key}"
-      {:error, e} -> raise "Zdb.delete error: #{inspect e}\n\titem: #{inspect item}"
+        es = "Could not delete, item not found.  item.key #{inspect item.key}"
+        IO.puts es
+        {:error,es}
+      {:error, e} -> 
+        raise "Zdb.delete error: #{inspect e}\n\titem: #{inspect item}"
+        #{:error,es}
     end  
   end
   def list_to_zitems(list,table) do
@@ -426,20 +433,25 @@ defmodule Zdb do
     end)
   end
   def ddb_to_zitem(ddb,table) do
-    item = make_map(ddb)
-    item = Map.put(item,:table,table)
-    item = Map.put(item,:key,{item.hk,item.rk})
-    item = Map.drop(item,[:hk,:rk])
-    case Map.has_key?(item,:map) do
-      true -> 
-        map = Poison.decode!(item.map,keys: :atoms!)
-        item = Map.put(item,:map,map)
-      false -> data = "{}"
+    case make_map(ddb) do
+      item when item == %{} -> 
+        IO.puts "WARNING: empty result from make_map \n\t#{inspect ddb}"
+        %Zitem{}
+      item -> 
+        item = Map.put(item,:table,table)
+        item = Map.put(item,:key,{item.hk,item.rk})
+        item = Map.drop(item,[:hk,:rk])
+        case Map.has_key?(item,:map) do
+          true -> 
+            map = Poison.decode!(item.map,keys: :atoms!)
+            item = Map.put(item,:map,map)
+          false -> data = "{}"
+        end
+        {item,attributes} = Map.split(item,[:data,:key,:map,:table])
+        item = Map.put(item,:attributes,attributes)
+        #%Zitem{key: {item.hk,item.rk},map: item,table: table}
+        struct(%Zitem{},item)
     end
-    {item,attributes} = Map.split(item,[:data,:key,:map,:table])
-    item = Map.put(item,:attributes,attributes)
-    #%Zitem{key: {item.hk,item.rk},map: item,table: table}
-    struct(%Zitem{},item)
   end
   def make_map(data) when is_list(data) do
     first = List.first(data)
@@ -448,7 +460,7 @@ defmodule Zdb do
       {k,v} -> make_map_list_of_kv(data)
       nil ->
         IO.puts "make_map: nothing to do here"
-        []
+        %{}
       horror -> raise "Zdb.make_map the horror #{inspect horror}"
     end
   end
