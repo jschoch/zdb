@@ -256,14 +256,18 @@ defmodule Zdb do
     i =  keys_to_strings(m)
     #i = keys_to_strings(i)
     opts = Enum.filter(item.opts,fn({k,v}) -> k != :attributes_to_get end)
-    _put(item.table,i,opts) 
+    {:ok,[]} = _put(item.table,i,opts) 
+    {:ok,item}
   end
 
-  defp _put(table_name,item,opts \\[return_values: :all_new]) do
+  defp _put(table_name,item,opts \\[return_values: :all_old]) do
     table = "#{Mix.env}_#{table_name}"
     case :erlcloud_ddb2.put_item(table,item,opts,config()) do
+      {:ok, ret} when ret == [] ->
+        {:ok,[]}
       {:ok, ret} ->
-        {:ok,ret}
+        IO.puts "WARNING: put overwrote an existing item #{inspect ret}"
+        {:ok,[]}
       {:error,e} -> raise "Zdb.put error: #{inspect e} \n\t table: #{inspect table_name}\n\t item #{inspect item}\n\t opts: #{inspect opts}"
     end
   end
@@ -417,7 +421,7 @@ defmodule Zdb do
     case :erlcloud_ddb2.delete_item(table,key,opts,config()) do
       {:ok, match} -> 
         IO.puts "delete_item result for item: #{inspect item}\n\t#{inspect match}"
-        {:ok,match}
+        {:ok,ddb_to_zitem(match,item.table)}
       {:error, {"ResourceNotFoundException", "Requested resource not found"}} ->
         es = "Could not delete, item not found.  item.key #{inspect item.key}"
         IO.puts es

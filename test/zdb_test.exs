@@ -35,6 +35,12 @@ defmodule ZdbTest do
     key = res.key
     assert key ==  {"bar","foo"}
   end
+  test "put returns Zitem" do
+    item = %Zitem{key: {:bar,:foo},table: "test_table"}
+    {:ok,res} = Zdb.put(item)
+    assert match?(%Zitem{},res), "should get %Zitem{} \n\tgot: #{inspect res}"
+    assert res == %Zitem{key: {:bar,:foo},table: "test_table"}
+  end
   test "simple get works" do
     item = %Zitem{key: {:bar,:foo},table: "test_table"}
     Zdb.put(item)
@@ -59,11 +65,11 @@ defmodule ZdbTest do
     assert map.key == "value"
   end
   test "delete works" do
-    item = %Zitem{key: {:bar,:foo},table: "test_table",map: %{key: "value"}}
+    item = %Zitem{key: {"bar","foo"},table: "test_table",map: %{key: "value"}}
     Zdb.put(item)
     {c,res} = Zdb.delete(item)
     assert c == :ok
-    assert res == []
+    assert res == item
   end
   test "ddb_to_zitem works properly" do
     ddb = [{"data", "{}"}, {"map", "{\"key\":\"value\"}"}, {"hk", "bar"}, {"rk", "foo"},{"lastPostBy", "bob@bob.com"}]

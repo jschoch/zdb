@@ -30,8 +30,8 @@ defmodule Zitem do
     key: {nil,nil}, 
     # TODO: do we need the item field?
     map: %{},
-    opts: [attributes_to_get: []],
+    opts: [attributes_to_get: [],return_values: :all_old],
     data: "{}",
-    attributes: []
+    attributes: %{}
 end
 

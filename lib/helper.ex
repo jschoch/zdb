@@ -34,6 +34,8 @@ defmodule Zdb.TH do
                  ]
     attributes = Zdb.TH.keys_to_strings(attributes)
     opts = [{:expected,[{"ForumName",:null},{"Subject",:null}]}]
+    #opts = [return_values: :all_new]
+    #opts = [{:return_values,:all_new}]
     config = Zdb.config
     {res,data} = :erlcloud_ddb2.put_item(table_name,attributes,opts,config)
   end
