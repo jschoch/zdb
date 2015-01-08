@@ -1,3 +1,4 @@
+ExUnit.configure(exclude: [pending: true])
 ExUnit.start()
 case Mix.env do
   :prod -> raise "please don't run in prod"

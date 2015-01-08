@@ -114,6 +114,7 @@ defmodule ZdbTest do
     [new_item] = Zdb.get(item).items
     assert new_item.map == %{foo: "bar"}
   end
+  @tag :pending
   test "update streamlines ZU with key so we don't need %Zitem" do
     assert false,"need to update ZU with key so we can just pass it to update(%Zu{})"
   end
@@ -158,6 +159,7 @@ defmodule ZdbTest do
     bad_res = Zdb.update(updated_item,updates)
     assert bad_res == :condition_check_failed, "bad update result did not match #{inspect bad_res}"
   end
+  @tag :pending
   test "put and get struct works" do
     assert false, "get/put struct TODO"
   end
@@ -217,6 +219,7 @@ defmodule ZdbTest do
     assert match?(%Zitem{},item)
     assert item.attributes.thing == 2
   end
+  @tag :pending
   test "streams work" do
     assert false, "not done yet, get those streams going"
   end
