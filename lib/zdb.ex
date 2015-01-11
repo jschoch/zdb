@@ -382,7 +382,7 @@ defmodule Zdb do
     _q(zq.table,e_kc,opts)
   end
   def _q(table_name,e_kc,opts) do
-    table = "#{Mix.env}_#{table}"
+    table = "#{Mix.env}_#{table_name}"
     IO.puts ":erlcloud_ddb2.q(#{inspect table},#{inspect e_kc},#{inspect opts},Zdb.config)"
     case :erlcloud_ddb2.q(table,e_kc,opts,config()) do
       {:ok, r} when is_list(r) -> %Zr{items: list_to_zitems(r,table_name)}
