@@ -12,6 +12,7 @@ end
 defmodule Zdb do
   defstruct table: "test_table"
   require Zc
+  require Logger
   @doc ~S"""
   creates a table.  interpolates mix env for you: 
   table_name = #{Mix.env}_#{table_name}
@@ -55,7 +56,7 @@ defmodule Zdb do
     table = "#{Mix.env}_#{table}"
      case :erlcloud_ddb2.describe_table(table,[],config()) do
         {:ok,d} -> d
-        {:error,e} -> IO.puts "describe error #{inspect e}"
+        {:error,e} -> Logger.error "describe error #{inspect e}"
       end
   end
   @doc ~S"""
@@ -87,7 +88,7 @@ defmodule Zdb do
     table = "#{Mix.env}_#{name}"
     case :erlcloud_ddb2.delete_table(table,[],config()) do
       {:ok,description} -> :ok #IO.puts "Table #{name} deleted\n\tDetails: #{inspect description}"
-      {:error,e} when r == :no_raise -> IO.puts "WARNING: Delete table: #{name} failed: :no_raise flag used"
+      {:error,e} when r == :no_raise -> Logger.warn "WARNING: Delete table: #{name} failed: :no_raise flag used"
         :error
       {:error,e} -> raise "Delete table: #{name} failed: #{inspect e}. \n\tTables available #{inspect Zdb.list}"
     end 
@@ -210,7 +211,7 @@ defmodule Zdb do
 
   def decap(s) do
     case String.match?(s,@decap_reg) do
-      true -> IO.puts "WARNING: please don't use caps in key names!!! #{inspect s}"
+      true -> Logger.warn "WARNING: please don't use caps in key names!!! #{inspect s}"
         {first, rest} = String.next_grapheme(s)
         String.downcase(first) <> rest
       false -> s
@@ -222,7 +223,7 @@ defmodule Zdb do
     Enum.map(list,fn({k,v})-> keys_to_strings(k,v) end)
   end
   def keys_to_strings(huh) do
-    IO.puts "WTF: #{inspect huh}"
+    Logger.error "WTF: #{inspect huh}"
   end
   def keys_to_strings(k,v) do
     case k do
@@ -266,7 +267,7 @@ defmodule Zdb do
       {:ok, ret} when ret == [] ->
         {:ok,[]}
       {:ok, ret} ->
-        IO.puts "WARNING: put overwrote an existing item #{inspect ret}"
+        Logger.warn "WARNING: put overwrote an existing item #{inspect ret}"
         {:ok,[]}
       {:error,e} -> raise "Zdb.put error: #{inspect e} \n\t table: #{inspect table_name}\n\t item #{inspect item}\n\t opts: #{inspect opts}"
     end
@@ -283,12 +284,12 @@ defmodule Zdb do
     table = "#{Mix.env}_#{table_name}"
     converted_updates = infer_keys(updates.attributes)
     in_updates = Enum.map(converted_updates,fn({k,v}) -> {k,v,updates.action} end)
-    IO.puts "in_updates: #{inspect in_updates}"
+    Logger.debug "in_updates: #{inspect in_updates}"
     opts = parse_update_opts(updates.opts)
     case :erlcloud_ddb2.update_item(table,key,in_updates,opts,config()) do
       {:ok,ret} -> ddb_to_zitem(ret,table_name)
       {:error,{"ConditionalCheckFailedException", ""}} -> 
-        IO.puts "WARNING Zdb.update conditional check failed for key: #{inspect key}"
+        Logger.warn "WARNING Zdb.update conditional check failed for key: #{inspect key}"
         :condition_check_failed
       {:error,e} -> raise "Zdb.get error: #{inspect e}\n\tconverted_updates= #{inspect in_updates}\n\ttable= #{inspect table}\n\tin_updates= #{inspect in_updates}\n\tkey= #{inspect key}\n\topts= #{inspect opts}\n\tconfig= #{inspect config()}"
     end
@@ -377,13 +378,13 @@ defmodule Zdb do
       true ->
         opts = parse_query_options(zq)
       false -> 
-        IO.puts "warning no query filter #{inspect zq}"
+        Logger.debug "warning no query filter #{inspect zq}"
     end
     _q(zq.table,e_kc,opts)
   end
   def _q(table_name,e_kc,opts) do
     table = "#{Mix.env}_#{table_name}"
-    IO.puts ":erlcloud_ddb2.q(#{inspect table},#{inspect e_kc},#{inspect opts},Zdb.config)"
+    Logger.debug ":erlcloud_ddb2.q(#{inspect table},#{inspect e_kc},#{inspect opts},Zdb.config)"
     case :erlcloud_ddb2.q(table,e_kc,opts,config()) do
       {:ok, r} when is_list(r) -> %Zr{items: list_to_zitems(r,table_name)}
       {:ok, r} -> raise "why is r not a list!!! #{inspect r}"
@@ -420,11 +421,11 @@ defmodule Zdb do
     opts = Enum.filter(item.opts,fn({k,v}) -> k != :attributes_to_get end)
     case :erlcloud_ddb2.delete_item(table,key,opts,config()) do
       {:ok, match} -> 
-        IO.puts "delete_item result for item: #{inspect item}\n\t#{inspect match}"
+        Logger.debug "delete_item result for item: #{inspect item}\n\t#{inspect match}"
         {:ok,ddb_to_zitem(match,item.table)}
       {:error, {"ResourceNotFoundException", "Requested resource not found"}} ->
         es = "Could not delete, item not found.  item.key #{inspect item.key}"
-        IO.puts es
+        Logger.error es
         {:error,es}
       {:error, e} -> 
         raise "Zdb.delete error: #{inspect e}\n\titem: #{inspect item}"
@@ -439,7 +440,7 @@ defmodule Zdb do
   def ddb_to_zitem(ddb,table) do
     case make_map(ddb) do
       item when item == %{} -> 
-        IO.puts "WARNING: empty result from make_map \n\t#{inspect ddb}"
+        Logger.warn "WARNING: empty result from make_map \n\t#{inspect ddb}"
         %Zitem{}
       item -> 
         item = Map.put(item,:table,table)
@@ -463,7 +464,7 @@ defmodule Zdb do
       i when is_list(i) -> make_map_list_of_lists(data)
       {k,v} -> make_map_list_of_kv(data)
       nil ->
-        IO.puts "make_map: nothing to do here"
+        Logger.debug "make_map: nothing to do here"
         %{}
       horror -> raise "Zdb.make_map the horror #{inspect horror}"
     end
