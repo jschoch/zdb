@@ -171,10 +171,11 @@ defmodule Zdb do
     table = "#{Mix.env}_#{table_name}"
     case :erlcloud_ddb2.get_item(table,key,opts,config()) do
       {:ok, ddb} ->
-        #map = make_map(list)
-        #data = Poison.decode!(map.data,keys: :atoms!)
-        item = ddb_to_zitem(ddb,table_name)
-        %Zr{items: [item]}
+        case ddb_to_zitem(ddb,table_name) do
+          nil -> %Zr{items: []}
+          item ->
+            %Zr{items: [item]}
+        end
       {:error,e} -> raise "Zdb.get error: #{inspect e}\n\ttable: #{inspect table}\n\tkey: #{inspect key}\n\topts: #{inspect opts}\n\tconfig: #{inspect config()}"
     end
   end
@@ -441,7 +442,8 @@ defmodule Zdb do
     case make_map(ddb) do
       item when item == %{} -> 
         Logger.warn "WARNING: empty result from make_map \n\t#{inspect ddb}"
-        %Zitem{}
+        #%Zitem{}
+        nil
       item -> 
         item = Map.put(item,:table,table)
         item = Map.put(item,:key,{item.hk,item.rk})
