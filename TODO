@@ -1,3 +1,5 @@
+v0.1.0
+
 refactor delete to be able to take key: {hk,rk}
 refactor update and %Zu to take a key arg
 refactor get to take key arg
