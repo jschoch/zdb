@@ -67,6 +67,10 @@ defmodule UBTest do
     {:ok,nil} = UB.put(ub)
     {:ok,%UB{} = x} = UB.get(ub)
     assert x == ub
+    y = UB.get!(ub)
+    assert y == ub
+    z = UB.get!(ub.id)
+    assert z == ub
   end
   test "the rest" do
     ub = %UB{id: "1"}
