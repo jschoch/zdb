@@ -406,6 +406,9 @@ defmodule Zdb do
     #end
     opts
   end
+  @doc """
+  scan(table_name) returns all items in a ddb table
+  """
   def scan(name) when is_binary(name) do
     table = "#{Mix.env}_#{name}"
     case :erlcloud_ddb2.scan(table,[],config()) do
