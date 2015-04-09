@@ -1,8 +1,17 @@
 defmodule Zdb.Base do
   defmacro __using__(_) do
     quote do
+      use Ndecode
       def foo do
         IO.puts "FOO"
+      end
+      @doc "derive key if there exists a fkey in struct"
+      def dk(%__MODULE__{fkey: nil} = item) do
+        {item.hk,item.id}
+      end
+      @doc " derive key from self struct "
+      def dk(%__MODULE__{fkey: fkey} = item) do
+        {"#{fkey}_#{__MODULE__}",item.id}
       end
       def get!(%__MODULE__{} = item) do
         {:ok, item} = get(item)
@@ -31,8 +40,14 @@ defmodule Zdb.Base do
         {:ok,item} = validate(item)
         item
       end
+      @doc "puts a struct to DDB, if an entry exists with the same hk(ddb hash key) it will return the old value and a warning"
       def put(%__MODULE__{} = item) do
-        item
+        key = dk(item)
+        case Zdb.put(key,item) do
+          {:ok,struct_s} when is_binary(struct_s) ->
+            {:ok,Poison.decode!(struct_s,[keys: :atoms,as: __MODULE__])}
+          good -> good
+        end
       end
       def put!(%__MODULE__{} = item) do
         {:ok, item} = put(item)

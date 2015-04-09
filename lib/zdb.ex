@@ -261,15 +261,28 @@ defmodule Zdb do
     {:ok,[]} = _put(item.table,i,opts) 
     {:ok,item}
   end
+  @doc ~S"""
+  put struct with attributes :key, :table,
 
+  """
+  def put(key,%{__struct__: s,table: table} = item) do
+    {hk,rk} = key
+    Logger.info("New PUT: " <> inspect item)
+    struct_s = Poison.encode!(item)
+    Logger.info("Encoded Put: \n\t" <> inspect struct_s, pretty: true)
+    attributes = [hk: hk, rk: rk,struct: struct_s]
+    attributes = keys_to_strings(attributes)
+    _put(table,attributes)
+  end
   defp _put(table_name,item,opts \\[return_values: :all_old]) do
     table = "#{Mix.env}_#{table_name}"
     case :erlcloud_ddb2.put_item(table,item,opts,config()) do
       {:ok, ret} when ret == [] ->
-        {:ok,[]}
+        {:ok,nil}
       {:ok, ret} ->
+        struct_s = ddb_to_struct_string(ret)
         Logger.warn "WARNING: put overwrote an existing item #{inspect ret}"
-        {:ok,[]}
+        {:ok,struct_s}
       {:error,e} -> raise "Zdb.put error: #{inspect e} \n\t table: #{inspect table_name}\n\t item #{inspect item}\n\t opts: #{inspect opts}"
     end
   end
@@ -435,6 +448,11 @@ defmodule Zdb do
         raise "Zdb.delete error: #{inspect e}\n\titem: #{inspect item}"
         #{:error,es}
     end  
+  end
+  def ddb_to_struct_string(ddb) do
+    [hk,rk,st] = ddb
+    {"struct",struct_string} = st
+    struct_string
   end
   def list_to_zitems(list,table) do
     Enum.map(list, fn(i) -> 
