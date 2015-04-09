@@ -20,8 +20,8 @@ defmodule ModTime do
     def decode(map,options) do
       map = a_to_l(map,:created_at)
       map = a_to_l(map,:updated_at)
-      #struct(%ModTime{},map)
-      map
+      struct(%ModTime{},map)
+      #map
     end
   end
 end

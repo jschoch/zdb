@@ -7,7 +7,16 @@ defmodule Zdb.Base do
       end
       @doc "derive key if there exists a fkey in struct"
       def dk(%__MODULE__{fkey: nil} = item) do
-        {item.hk,item.id}
+        hk = __MODULE__
+        case String.split(item.hk,".") do
+          [s] when is_binary(s) -> hk = s
+          ["Elixir"|t] -> hk = Enum.join(t,".") 
+          doh -> raise "HORROR! #{doh}"
+        end
+        #{item.hk,item.id}
+        key = {hk,item.id}
+        Logger.info "derived key: " <> inspect key
+        key
       end
       @doc " derive key from self struct "
       def dk(%__MODULE__{fkey: fkey} = item) do
@@ -18,7 +27,10 @@ defmodule Zdb.Base do
         item
       end
       def get(%__MODULE__{} = item) do
-        {:ok,item}
+        key = dk(item)
+        struct_s =  Zdb.get(item.table,key,[])
+        IO.puts "SS: "<> inspect struct_s
+        {:ok,Poison.decode!(struct_s,[keys: :atoms,as: __MODULE__])}      
       end
       def get(id) when is_integer(id) or is_binary(id) do
         {:ok,%__MODULE__{id: id}}
@@ -46,7 +58,7 @@ defmodule Zdb.Base do
         case Zdb.put(key,item) do
           {:ok,struct_s} when is_binary(struct_s) ->
             {:ok,Poison.decode!(struct_s,[keys: :atoms,as: __MODULE__])}
-          good -> good
+          other -> other 
         end
       end
       def put!(%__MODULE__{} = item) do

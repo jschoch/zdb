@@ -167,6 +167,15 @@ defmodule Zdb do
     key = parse_key(item)
     _get(item.table,key)
   end
+  @doc " get for struct "
+  def get(table_name,{hk,rk},opts) do
+    table = "#{Mix.env}_#{table_name}"
+    key = [{"hk", hk},{"rk", rk}]
+    case :erlcloud_ddb2.get_item(table,key,opts,config()) do
+      {:ok,ddb} -> ddb_to_struct_string(ddb)
+      {:error,e} -> raise "Zdb.get error: #{inspect e}\n\ttable: #{inspect table}\n\tkey: #{inspect key}\n\topts: #{inspect opts}\n\tconfig: #{inspect config()}"
+    end
+  end
   defp _get(table_name,key,opts \\[]) do
     table = "#{Mix.env}_#{table_name}"
     case :erlcloud_ddb2.get_item(table,key,opts,config()) do
