@@ -277,9 +277,7 @@ defmodule Zdb do
   """
   def put(key,%{__struct__: s,table: table} = item) do
     {hk,rk} = key
-    Logger.info("New PUT: " <> inspect item)
     struct_s = Poison.encode!(item)
-    Logger.info("Encoded Put: \n\t" <> inspect struct_s, pretty: true)
     attributes = [hk: hk, rk: rk,struct: struct_s]
     attributes = keys_to_strings(attributes)
     _put(table,attributes)

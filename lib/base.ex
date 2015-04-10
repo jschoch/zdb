@@ -1,13 +1,9 @@
-defmodule Zdb.Base do
+defmodule Zdb.Base.PK do
+  @moduledoc " base implementation for Zdb struct as primary key "
   defmacro __using__(_) do
     quote do
       use Ndecode
-      defstruct fkey: nil,id: nil
-      #@on_load :check_module
-      #@type t :: %__MODULE__{
-        #fkey: String.t,
-        #id: String.t 
-      #}
+      defstruct id: nil
       @doc "failed to figur eout how to check struct attributes on  load"
       def check_module do
         # ensure we have the correct attributes defined in the struct
@@ -45,17 +41,25 @@ defmodule Zdb.Base do
           doh -> raise "HORROR! #{doh}"
         end
       end
-      @doc "derive key if there exists a fkey in struct"
+      @doc "derive key from self"
       def dk(%__MODULE__{fkey: nil} = item) do
         key = {mod_name,item.id}
       end
-      @doc " derive key from self struct "
+      @doc " derive key from foreign key: fkey"
       def dk(%__MODULE__{fkey: fkey} = item) do
-        {"#{fkey}_#{__MODULE__}",item.id}
+        {"#{fkey}_#{mod_name}",item.id}
       end
       def dk(id) when is_binary(id) do
         ensure_table_name
         {mod_name,id} 
+      end
+      def dk(fkey,id) do
+        ensure_table_name
+        {"#{fkey}_#{mod_name}",id}
+      end
+      def get(fk,id) do
+        key = dk(fk,id)
+        {:ok, _get(@t_name,key)}
       end
       def get!(%__MODULE__{} = item) do
         {:ok, item} = get(item)
@@ -66,7 +70,7 @@ defmodule Zdb.Base do
         r = _get(item.table,key) 
         {:ok,r}      
       end
-      def get(id) when is_integer(id) or is_binary(id) do
+      def get(id) when is_binary(id) do
         key = dk(id)
         r = _get(@t_name,key)
         {:ok,r}
@@ -79,7 +83,7 @@ defmodule Zdb.Base do
           doh -> raise "HORROR #{inspect doh}\nitem: #{inspect key}"
         end
       end
-      def get!(id) when is_integer(id) or is_binary(id) do
+      def get!(id) when is_binary(id) do
         {:ok,item} = get(id)
         item
       end
@@ -112,11 +116,22 @@ defmodule Zdb.Base do
       def fon(%__MODULE__{} = item) do
         item
       end
-      def fon(id) when is_integer(id) or is_binary(id) do
+      def fon(id) when is_binary(id) do
         %__MODULE__{id: id}
       end
       def all() do
-        []
+        {hk,rk} = dk(%__MODULE__{})
+        qf = []
+        q = %Zq{table: @t_name,kc: [{"hk",:eq,hk}],qf: qf} 
+        raise "reimplement q to return raw items to be encoded to structs"
+        case Zdb.q(q) do
+          %{items: items} -> {:ok,items}
+          doh -> raise "no items #{inspect doh, pretty: true}"
+        end
+      end
+      def all! do
+        {:ok, list} = all
+        list
       end
       def delete(%__MODULE__{} = item) do
         key = dk(item)
@@ -150,7 +165,7 @@ defmodule Zdb.Base do
       #def validate(%__MODULE__{} = item) do
       #  item
       #end
-
+      defoverridable [get: 1]
     end 
   end
 end

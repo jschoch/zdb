@@ -1,19 +1,24 @@
 defmodule UB do
   @t_name "test_base_table"
-  defstruct hk: Atom.to_string( __MODULE__), 
-    rk:  nil,
-    table: "test_base_table",
+  defstruct   table: @t_name,
     id: nil,
     fkey: nil,
-    key: nil,
     test: "1",
     mod: %ModTime{}
-  use Zdb.Base
+  use Zdb.Base.PK
+end
+defmodule FK do
+  @t_name "test_base_table"
+  defstruct table: @t_name,
+    id: nil,
+    fkey: nil,
+    attr: "1" 
+  use Zdb.Base.FK
 end
 
 defmodule BAD do
   #defstruct yousuck: true
-  use Zdb.Base
+  use Zdb.Base.PK
 end
 
 defmodule UBTest do
@@ -93,6 +98,25 @@ defmodule UBTest do
     a = UB.get!("doesn't exist anywhere")
     assert a == nil
   end
+  test "can get with derived foreign key" do
+    ub = %UB{id: "1"}
+    fk = %FK{id: "1",fkey: ub.id}
+    key = FK.dk(fk)
+    assert key == {"1_FK", "1"}, "wrong key: got: #{inspect key}"
+    key = FK.dk(ub.id,fk.id)
+    assert key == {"1_FK", "1"}, "wrong key: got: #{inspect key}"
+    nil = FK.put!(fk)
+    IO.puts "Scan: \n#{inspect Zdb.scan(FK.get_table_name)}"
+    {:ok,got} = FK.get(fk)
+    assert got != nil,"got was nil"
+    assert got.id == "1", "id should be 1, got: #{inspect got}"
+    assert got.fkey == "1"
+    assert got == fk
+    raise_error_message = "must error since you can't derive a key from id if you are using a foreign key"
+    assert_raise RuntimeError,raise_error_message, fn->
+      FK.get("1")
+    end
+  end
   test "can delete" do
     ub = %UB{id: "1"}
     {:ok,nil} = UB.put(ub)
@@ -101,17 +125,25 @@ defmodule UBTest do
     assert x == nil
     UB.delete!(ub)
   end
+  def make_lots(count) do
+    Enum.each(1..count,fn(i) ->
+      UB.put(%UB{id: to_string(i)})
+    end)
+  end
+  test "gets all" do
+    make_lots(3)
+    {:ok,list} = UB.all
+    assert Enum.count(list) == 3, "wrong sized list #{inspect list, pretty: true}"
+    assert false, "add real parsing of structs"
+    assert false, "add pagination option"
+    assert false, "make sure you can get results over single request limits"
+  end
   test "the rest" do
     ub = %UB{id: "1"}
     UB.put!(ub)
     %UB{} =UB.update(ub)
-    {:ok,%UB{}} = UB.get(ub)
-    %UB{} =UB.get!(ub)
-    {:ok,%UB{}} = UB.get(ub.id)
-    %UB{} = UB.get!(ub.id)
     %UB{} =UB.fon(ub)
     %UB{} = UB.fon(ub.id)
     list = UB.all
-    nil =UB.delete!(ub)
   end
 end
