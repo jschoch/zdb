@@ -2,7 +2,6 @@ defmodule UB do
   @t_name "test_base_table"
   defstruct   table: @t_name,
     id: nil,
-    fkey: nil,
     test: "1",
     mod: %ModTime{}
   use Zdb.Base.PK
@@ -35,15 +34,10 @@ defmodule UBTest do
     :ok
   end
   test "keys work" do
-    UB.foo
-    assert true
     ub = %UB{id: "1"}
     IO.inspect ub
     key = UB.dk(ub)
     assert {"UB",ub.id} == key
-    ub_with_fkey = Map.put(ub,:fkey,"3")
-    from_fkey = UB.dk(ub_with_fkey)
-    assert from_fkey == {"3_Elixir.UB", "1"}
     %UB{} = UB.validate(ub)
     s = Poison.encode!(ub)
     decoded = Poison.decode!(s,[keys: :atoms, as: UB])

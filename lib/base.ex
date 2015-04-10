@@ -4,22 +4,6 @@ defmodule Zdb.Base.PK do
     quote do
       use Ndecode
       defstruct id: nil
-      @doc "failed to figur eout how to check struct attributes on  load"
-      def check_module do
-        # ensure we have the correct attributes defined in the struct
-        r = :ok
-        s = %__MODULE__{}
-        case s do
-          %{table: nil} -> r = "You must define a table name"
-          true -> true
-          _ -> true
-        end
-        r
-      end
-      #@t_name nil
-      def foo do
-        IO.puts "FOO"
-      end
       def puts_table_name do
         IO.puts "TNAME:\n\t#{inspect @t_name}"
       end
@@ -42,24 +26,12 @@ defmodule Zdb.Base.PK do
         end
       end
       @doc "derive key from self"
-      def dk(%__MODULE__{fkey: nil} = item) do
+      def dk(%__MODULE__{} = item) do
         key = {mod_name,item.id}
-      end
-      @doc " derive key from foreign key: fkey"
-      def dk(%__MODULE__{fkey: fkey} = item) do
-        {"#{fkey}_#{mod_name}",item.id}
       end
       def dk(id) when is_binary(id) do
         ensure_table_name
         {mod_name,id} 
-      end
-      def dk(fkey,id) do
-        ensure_table_name
-        {"#{fkey}_#{mod_name}",id}
-      end
-      def get(fk,id) do
-        key = dk(fk,id)
-        {:ok, _get(@t_name,key)}
       end
       def get!(%__MODULE__{} = item) do
         {:ok, item} = get(item)
@@ -165,7 +137,7 @@ defmodule Zdb.Base.PK do
       #def validate(%__MODULE__{} = item) do
       #  item
       #end
-      defoverridable [get: 1]
+      defoverridable [get: 1,dk: 1]
     end 
   end
 end
