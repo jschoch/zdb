@@ -137,7 +137,7 @@ defmodule Zdb.Base.PK do
       #def validate(%__MODULE__{} = item) do
       #  item
       #end
-      defoverridable [get: 1,dk: 1]
+      defoverridable [dk: 1]
     end 
   end
 end

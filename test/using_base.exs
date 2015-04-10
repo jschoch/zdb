@@ -106,8 +106,7 @@ defmodule UBTest do
     assert got.id == "1", "id should be 1, got: #{inspect got}"
     assert got.fkey == "1"
     assert got == fk
-    raise_error_message = "must error since you can't derive a key from id if you are using a foreign key"
-    assert_raise RuntimeError,raise_error_message, fn->
+    assert_raise RuntimeError, fn->
       FK.get("1")
     end
   end

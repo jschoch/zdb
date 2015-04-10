@@ -11,7 +11,7 @@ defmodule Zdb.Base.FK do
         ensure_table_name
         {"#{fkey}_#{mod_name}",id}
       end
-      def get(id) when is_binary(id) do
+      def dk(_) do
         raise "Can't derive key from id when using FK (foriegn key)"
       end
       def get(fk,id) do
