@@ -35,8 +35,11 @@ defmodule ZdbTest do
     key = res.key
     assert key ==  {"bar","foo"}
   end
-  test "put returns Zitem" do
+  test "put returns old Zitem" do
+    raise "this is wrong, need to return nil, or the old item, not the input item"
     item = %Zitem{key: {:bar,:foo},table: "test_table"}
+    {:ok,res} = Zdb.put(item) 
+    assert res == nil
     {:ok,res} = Zdb.put(item)
     assert match?(%Zitem{},res), "should get %Zitem{} \n\tgot: #{inspect res}"
     assert res == %Zitem{key: {:bar,:foo},table: "test_table"}

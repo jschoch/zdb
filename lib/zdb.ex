@@ -280,9 +280,10 @@ defmodule Zdb do
     struct_s = Poison.encode!(item)
     attributes = [hk: hk, rk: rk,struct: struct_s]
     attributes = keys_to_strings(attributes)
-    _put(table,attributes)
+    special_put(table,attributes)
   end
-  defp _put(table_name,item,opts \\[return_values: :all_old]) do
+  # TODO: fix this terrible hack
+  defp special_put(table_name,item,opts \\[return_values: :all_old]) do
     table = "#{Mix.env}_#{table_name}"
     case :erlcloud_ddb2.put_item(table,item,opts,config()) do
       {:ok, ret} when ret == [] ->
@@ -291,6 +292,17 @@ defmodule Zdb do
         struct_s = ddb_to_struct_string(ret)
         Logger.warn "WARNING: put overwrote an existing item #{inspect ret}"
         {:ok,struct_s}
+      {:error,e} -> raise "Zdb.put error: #{inspect e} \n\t table: #{inspect table_name}\n\t item #{inspect item}\n\t opts: #{inspect opts}"
+    end
+  end
+  defp _put(table_name,item,opts \\[return_values: :all_old]) do
+    table = "#{Mix.env}_#{table_name}"
+    case :erlcloud_ddb2.put_item(table,item,opts,config()) do
+      {:ok, ret} when ret == [] ->
+        {:ok,[]}
+      {:ok, ret} ->
+        Logger.warn "WARNING: put overwrote an existing item #{inspect ret}"
+        {:ok,[]}
       {:error,e} -> raise "Zdb.put error: #{inspect e} \n\t table: #{inspect table_name}\n\t item #{inspect item}\n\t opts: #{inspect opts}"
     end
   end
