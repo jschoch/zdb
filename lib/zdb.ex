@@ -172,6 +172,7 @@ defmodule Zdb do
     table = "#{Mix.env}_#{table_name}"
     key = [{"hk", hk},{"rk", rk}]
     case :erlcloud_ddb2.get_item(table,key,opts,config()) do
+      {:ok,[]} -> nil
       {:ok,ddb} -> ddb_to_struct_string(ddb)
       {:error,e} -> raise "Zdb.get error: #{inspect e}\n\ttable: #{inspect table}\n\tkey: #{inspect key}\n\topts: #{inspect opts}\n\tconfig: #{inspect config()}"
     end
@@ -457,6 +458,26 @@ defmodule Zdb do
         raise "Zdb.delete error: #{inspect e}\n\titem: #{inspect item}"
         #{:error,es}
     end  
+  end
+  @doc " delete for struct"
+  def delete(table_name,{hk,rk}) do
+    table = "#{Mix.env}_#{table_name}"
+    key = infer_keys([hk: hk,rk: rk])
+    opts = []
+    case :erlcloud_ddb2.delete_item(table,key,opts,config()) do
+      {:ok,[]} ->
+        :ok
+      {:ok, ddb} ->
+        # assuming this works when we get the old result
+        struct_s = ddb_to_struct_string(ddb)
+        {:ok,struct_s}
+      {:error, {"ResourceNotFoundException", "Requested resource not found"}} ->
+        es = "Could not delete, item not found.  item.key #{inspect key}"
+        Logger.error es
+        {:error,:not_found}
+      {:error, e} ->
+        raise "Zdb.delete error: #{inspect e}\n\titem key: #{inspect key}"
+    end
   end
   def ddb_to_struct_string(ddb) do
     [hk,rk,st] = ddb

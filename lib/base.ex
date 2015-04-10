@@ -2,25 +2,60 @@ defmodule Zdb.Base do
   defmacro __using__(_) do
     quote do
       use Ndecode
+      defstruct fkey: nil,id: nil
+      #@on_load :check_module
+      #@type t :: %__MODULE__{
+        #fkey: String.t,
+        #id: String.t 
+      #}
+      @doc "failed to figur eout how to check struct attributes on  load"
+      def check_module do
+        # ensure we have the correct attributes defined in the struct
+        r = :ok
+        s = %__MODULE__{}
+        case s do
+          %{table: nil} -> r = "You must define a table name"
+          true -> true
+          _ -> true
+        end
+        r
+      end
+      #@t_name nil
       def foo do
         IO.puts "FOO"
       end
-      @doc "derive key if there exists a fkey in struct"
-      def dk(%__MODULE__{fkey: nil} = item) do
-        hk = __MODULE__
-        case String.split(item.hk,".") do
-          [s] when is_binary(s) -> hk = s
-          ["Elixir"|t] -> hk = Enum.join(t,".") 
+      def puts_table_name do
+        IO.puts "TNAME:\n\t#{inspect @t_name}"
+      end
+      def get_table_name do
+        @t_name
+      end
+      def ensure_table_name do
+        IO.puts "TNAME: #{inspect @t_name}"
+        case @t_name do
+          nil -> raise "You must define @t_name with the table name you want to use for any method using 'id' as the argument"
+          _ -> true
+        end
+      end
+      def mod_name do
+        m = Atom.to_string( __MODULE__)
+        case String.split(m,".") do
+          [s] when is_binary(s) ->  s
+          ["Elixir"|t] -> Enum.join(t,".")
           doh -> raise "HORROR! #{doh}"
         end
-        #{item.hk,item.id}
-        key = {hk,item.id}
-        Logger.info "derived key: " <> inspect key
-        key
+      end
+      @doc "derive key if there exists a fkey in struct"
+      def dk(%__MODULE__{fkey: nil} = item) do
+        key = {mod_name,item.id}
       end
       @doc " derive key from self struct "
       def dk(%__MODULE__{fkey: fkey} = item) do
         {"#{fkey}_#{__MODULE__}",item.id}
+      end
+      def dk(id) when is_binary(id) do
+        ensure_table_name
+        {mod_name,id} 
       end
       def get!(%__MODULE__{} = item) do
         {:ok, item} = get(item)
@@ -28,12 +63,21 @@ defmodule Zdb.Base do
       end
       def get(%__MODULE__{} = item) do
         key = dk(item)
-        struct_s =  Zdb.get(item.table,key,[])
-        IO.puts "SS: "<> inspect struct_s
-        {:ok,Poison.decode!(struct_s,[keys: :atoms,as: __MODULE__])}      
+        r = _get(item.table,key) 
+        {:ok,r}      
       end
       def get(id) when is_integer(id) or is_binary(id) do
-        {:ok,%__MODULE__{id: id}}
+        key = dk(id)
+        r = _get(@t_name,key)
+        {:ok,r}
+      end
+      def _get(table,key) do
+        r = nil
+        case Zdb.get(table,key,[]) do
+          nil -> nil
+          struct_s when is_binary(struct_s) -> got = Poison.decode!(struct_s,[keys: :atoms,as: __MODULE__])
+          doh -> raise "HORROR #{inspect doh}\nitem: #{inspect key}"
+        end
       end
       def get!(id) when is_integer(id) or is_binary(id) do
         {:ok,item} = get(id)
@@ -75,7 +119,21 @@ defmodule Zdb.Base do
         []
       end
       def delete(%__MODULE__{} = item) do
-        item
+        key = dk(item)
+        case Zdb.delete(item.table,key) do
+          :ok -> {:ok,nil}
+          {:ok,struct_s} -> 
+            {:ok,Poison.decode!(struct_s,[keys: :atoms,as: __MODULE__])}
+          {:error,:not_found} -> 
+            Logger.debug "delete #{inspect item} not found"
+            {:error,:not_found}
+          {:error,e} ->
+            raise "Delete Errror for item: #{inspect item}\n\n#{inspect e}"
+        end
+      end
+      def delete!(%__MODULE__{} = item) do
+        {:ok, old_item} = delete(item)
+        nil
       end
       def delete!(%__MODULE__{} = item) do
         {:ok,item} = delete(item)

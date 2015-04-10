@@ -1,4 +1,5 @@
 defmodule UB do
+  @t_name "test_base_table"
   defstruct hk: Atom.to_string( __MODULE__), 
     rk:  nil,
     table: "test_base_table",
@@ -10,6 +11,10 @@ defmodule UB do
   use Zdb.Base
 end
 
+defmodule BAD do
+  #defstruct yousuck: true
+  use Zdb.Base
+end
 
 defmodule UBTest do
   use ExUnit.Case
@@ -24,7 +29,7 @@ defmodule UBTest do
     end
     :ok
   end
-  test "yup" do
+  test "keys work" do
     UB.foo
     assert true
     ub = %UB{id: "1"}
@@ -39,8 +44,22 @@ defmodule UBTest do
     decoded = Poison.decode!(s,[keys: :atoms, as: UB])
     assert match?(%ModTime{}, decoded.mod)
     assert ub == decoded
+    id = "1"
+    key = UB.dk(id)
+    assert key == {"UB",ub.id}
+    UB.puts_table_name
+    t_name = UB.get_table_name
+    assert t_name == "test_base_table"
     Logger.flush()
     sl
+  end
+  test "bad handled with the right errors" do
+    b = %BAD{id: "1"}
+    key = BAD.dk(b) 
+    IO.puts "bad key: #{inspect key}"
+    assert_raise RuntimeError, fn->
+      key = BAD.dk(b.id)
+    end
   end
   test "can put" do
     ub = %UB{id: "1"}
@@ -71,6 +90,16 @@ defmodule UBTest do
     assert y == ub
     z = UB.get!(ub.id)
     assert z == ub
+    a = UB.get!("doesn't exist anywhere")
+    assert a == nil
+  end
+  test "can delete" do
+    ub = %UB{id: "1"}
+    {:ok,nil} = UB.put(ub)
+    UB.delete(ub)
+    x = UB.get!(ub.id) 
+    assert x == nil
+    UB.delete!(ub)
   end
   test "the rest" do
     ub = %UB{id: "1"}
@@ -83,8 +112,6 @@ defmodule UBTest do
     %UB{} =UB.fon(ub)
     %UB{} = UB.fon(ub.id)
     list = UB.all
-    %UB{} =UB.delete(ub)
-    
-
+    nil =UB.delete!(ub)
   end
 end
