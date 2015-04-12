@@ -86,10 +86,14 @@ defmodule Zdb.Base.PK do
         item
       end
       def fon(%__MODULE__{} = item) do
-        item
+        raise "not implemented yet"
       end
       def fon(id) when is_binary(id) do
         %__MODULE__{id: id}
+        raise "not implemented yet"
+      end
+      def fon(items) when is_list(items) do
+        raise "not implemented yet" 
       end
       def all() do
         {hk,rk} = dk(%__MODULE__{})
@@ -137,7 +141,7 @@ defmodule Zdb.Base.PK do
       #def validate(%__MODULE__{} = item) do
       #  item
       #end
-      defoverridable [dk: 1]
+      defoverridable [dk: 1,fon: 1]
     end 
   end
 end
