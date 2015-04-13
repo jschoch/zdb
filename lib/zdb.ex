@@ -416,6 +416,30 @@ defmodule Zdb do
     end
     _q(zq.table,e_kc,opts)
   end
+  def all(%Zq{} = zq) do
+    e_kc = parse_kc(zq.kc)
+    opts = []
+    case zq.qf != [] do
+      true ->
+        opts = parse_query_options(zq)
+      false ->
+        Logger.debug "warning no query filter #{inspect zq}"
+    end
+    _all(zq.table,e_kc,opts)
+  end
+  def _all(table_name,e_kc,opts) do
+    table = "#{Mix.env}_#{table_name}"
+    Logger.debug ":erlcloud_ddb2.q(#{inspect table},#{inspect e_kc},#{inspect opts},Zdb.config)"
+    case :erlcloud_ddb2.q(table,e_kc,opts,config()) do
+      {:ok, list} when is_list(list) -> 
+        Enum.map(list,fn(item) ->
+          struct_s = ddb_to_struct_string(item)
+        end)
+      {:ok, r} -> raise "why is r not a list!!! #{inspect r}"
+      {:error, e} -> raise "query error #{inspect e}\n\tkc = #{inspect e_kc}\n\ttable = #{inspect table}\n\topts = #{inspect opts}"
+    end
+  end
+
   def _q(table_name,e_kc,opts) do
     table = "#{Mix.env}_#{table_name}"
     Logger.debug ":erlcloud_ddb2.q(#{inspect table},#{inspect e_kc},#{inspect opts},Zdb.config)"

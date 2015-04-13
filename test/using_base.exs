@@ -118,15 +118,30 @@ defmodule UBTest do
     assert x == nil
     UB.delete!(ub)
   end
-  def make_lots(count) do
+  def ub_make_lots(count) do
     Enum.each(1..count,fn(i) ->
       UB.put(%UB{id: to_string(i)})
     end)
   end
+  def fk_make_lots(count) do
+    Enum.each(1..count,fn(i) ->
+      FK.put(%FK{id: to_string(i),fkey: to_string(i)})
+    end)
+  end
   test "gets all" do
-    make_lots(3)
+    ub_make_lots(3)
+    fk_make_lots(2)
     {:ok,list} = UB.all
+    IO.puts inspect list,pretty: true
     assert Enum.count(list) == 3, "wrong sized list #{inspect list, pretty: true}"
+    {:ok,list} = FK.all("1")
+    IO.puts inspect list,pretty: true
+    assert Enum.count(list) == 1,"wrong sized list #{inspect list}"
+    
+    {:ok,list} = FK.all("2")
+    IO.puts inspect list,pretty: true
+    assert Enum.count(list) == 1,"wrong sized list #{inspect list}"
+
     assert false, "add real parsing of structs"
     assert false, "add pagination option"
     assert false, "make sure you can get results over single request limits"

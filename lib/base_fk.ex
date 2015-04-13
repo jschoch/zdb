@@ -18,6 +18,10 @@ defmodule Zdb.Base.FK do
         key = dk(fk,id)
         {:ok, _get(@t_name,key)}
       end
+      def all(fkey) do
+        hk = "#{fkey}_#{mod_name()}"
+        _all(hk)
+      end
     end
   end
 end

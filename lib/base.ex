@@ -95,19 +95,28 @@ defmodule Zdb.Base.PK do
       def fon(items) when is_list(items) do
         raise "not implemented yet" 
       end
-      def all() do
-        {hk,rk} = dk(%__MODULE__{})
-        qf = []
-        q = %Zq{table: @t_name,kc: [{"hk",:eq,hk}],qf: qf} 
-        raise "reimplement q to return raw items to be encoded to structs"
-        case Zdb.q(q) do
-          %{items: items} -> {:ok,items}
-          doh -> raise "no items #{inspect doh, pretty: true}"
-        end
-      end
       def all! do
         {:ok, list} = all
         list
+      end
+      def all() do
+        {hk,rk} = dk(%__MODULE__{})
+        _all(hk)
+      end
+      def _all(hk) do
+        qf = []
+        q = %Zq{table: @t_name,kc: [{"hk",:eq,hk}],qf: qf} 
+        Logger.debug "runnin q #{inspect q}"
+        case Zdb.all(q) do
+          list when is_list(list) -> 
+            Logger.debug "Zdb.base.all got list: #{inspect list, pretty: true}"
+            structs = Enum.map(list,fn(struct_s)->
+              Poison.decode!(struct_s,[keys: :atoms,as: __MODULE__])
+            end)
+            {:ok,structs}
+          [] -> {:ok, []}
+          doh -> raise "no items #{inspect doh, pretty: true}"
+        end
       end
       def delete(%__MODULE__{} = item) do
         key = dk(item)
