@@ -11,7 +11,9 @@ defmodule FK do
   defstruct table: @t_name,
     id: nil,
     fkey: nil,
+    mod: %ModTime{},
     attr: "1" 
+  
   use Zdb.Base.FK
 end
 
@@ -22,7 +24,6 @@ end
 
 defmodule UBTest do
   use ExUnit.Case
-  use Ndecode
   def sl do
     :timer.sleep(200)
   end
@@ -139,6 +140,9 @@ defmodule UBTest do
     assert Enum.count(list) == 1,"wrong sized list #{inspect list}"
     
     {:ok,list} = FK.all("2")
+    [fk] = list
+    mod = fk.mod
+    assert match? mod, %ModTime{}
     IO.puts inspect list,pretty: true
     assert Enum.count(list) == 1,"wrong sized list #{inspect list}"
 
