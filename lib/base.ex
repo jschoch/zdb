@@ -4,6 +4,9 @@ defmodule Zdb.Base.PK do
     quote do
       use Ndecode
       defstruct id: nil
+      @doc """
+        prints the ddb table name which is appended to the mix env "#{Mix.env})#{@t_name}"
+      """
       def puts_table_name do
         IO.puts "TNAME:\n\t#{inspect @t_name}"
       end
@@ -103,6 +106,10 @@ defmodule Zdb.Base.PK do
         {hk,rk} = dk(%__MODULE__{})
         _all(hk)
       end
+      #def all(%__MODULE__{} = item) do
+        #{hk,rk} = dk(item)
+        #_all(hk)
+      #end
       def _all(hk) do
         qf = []
         q = %Zq{table: @t_name,kc: [{"hk",:eq,hk}],qf: qf} 
@@ -140,6 +147,7 @@ defmodule Zdb.Base.PK do
         item
       end
       def update(%__MODULE__{} = item) do
+        raise "not implemented"
         item
       end
       def update!(%__MODULE__{} = item) do

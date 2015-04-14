@@ -1,4 +1,5 @@
 defmodule ModTime do
+  moduledoc "module to track typical timestamps for an item"
   use Timex
   defstruct created_at: Time.now, updated_at: Time.now, viewed_at: {0,0,0}
   defimpl Poison.Encoder, for: ModTime do
@@ -11,6 +12,7 @@ defmodule ModTime do
         t_to_l(map,key)
       end)
     end
+    @doc "encode timestamp {a,b,c} to [a,b,c] and back"
     def encode(%ModTime{} = map,options) do
       map = t_to_l(map,[:created_at, :updated_at,:viewed_at]) 
       Poison.Encoder.Map.encode(map,options)
@@ -29,7 +31,6 @@ defmodule ModTime do
     def decode(map,options) do
       map = a_to_l(map,[:created_at, :updated_at, :viewed_at])
       struct(%ModTime{},map)
-      #map
     end
   end
 end
