@@ -1,5 +1,5 @@
 defmodule ModTime do
-  moduledoc "module to track typical timestamps for an item"
+  @moduledoc "module to track typical timestamps for an item"
   use Timex
   defstruct created_at: Time.now, updated_at: Time.now, viewed_at: {0,0,0}
   defimpl Poison.Encoder, for: ModTime do
