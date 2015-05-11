@@ -37,7 +37,7 @@ defmodule Zdb.Mixfile do
      {:earmark, ">= 0.0.0",only: :dev},
      {:timex, "~> 0.13.4"},
      {:ndecode,github: "jschoch/ndecode"},
-     {:poison, "~> 1.3.1"}
+     {:poison, "~> 1.4.0"}
     ]
   end
     defp package do
